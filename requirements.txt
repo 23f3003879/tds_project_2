@@ -21,5 +21,6 @@ html5lib==1.1
 pillow==10.4.0
 werkzeug==3.0.3
 duckdb==1.0.0
+networkx==3.3
 
 
