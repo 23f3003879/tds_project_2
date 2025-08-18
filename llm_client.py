@@ -1,8 +1,47 @@
 import os
 import json
 
-# Load provider setting from environment: "gemini" or "openai"
+# Load provider setting from environment: "gemini" or "openai" or "aipipe"
+
+# ---------------------------
+# AI Pipe mode - using OpenAI API through AI Pipe proxy
+# ---------------------------
+
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "openai").lower()
+
+if LLM_PROVIDER == "aipipe":
+    import openai
+
+    AIPIPE_TOKEN = os.getenv("AIPIPE_TOKEN")
+    if not AIPIPE_TOKEN:
+        raise ValueError("Missing AIPIPE_TOKEN in environment variables. Get one from https://aipipe.org/login")
+
+    # Configure OpenAI client to use AI Pipe proxy
+    openai.api_key = AIPIPE_TOKEN
+    openai.base_url = "https://aipipe.org/openai/v1"
+    
+    # Default model - you can use OpenAI models through AI Pipe
+    DEFAULT_MODEL = os.getenv("AIPIPE_MODEL", "gpt-4o-mini")
+
+    def call_llm(system_prompt: str, user_prompt: str, model: str | None = None) -> str:
+        """Call OpenAI model using AI Pipe proxy"""
+        chosen = model or DEFAULT_MODEL
+        
+        # Use the newer OpenAI client syntax
+        client = openai.OpenAI(
+            api_key=AIPIPE_TOKEN,
+            base_url="https://aipipe.org/openai/v1"
+        )
+        
+        response = client.chat.completions.create(
+            model=chosen,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0
+        )
+        return response.choices[0].message.content
 
 # ---------------------------
 # Gemini (Google) mode - using NEW google-genai SDK
