@@ -7,24 +7,25 @@ def main():
     if len(sys.argv) < 2:
         print("Usage: python run.py <API_URL> [files...]")
         sys.exit(1)
-
     url = sys.argv[1]
     file_paths = sys.argv[2:]
 
+    # Auto-detect files if none given
     if not file_paths:
         guessed = []
+        # Always add questions.txt or question.txt first if it exists
         if os.path.exists("questions.txt"):
             guessed.append("questions.txt")
         elif os.path.exists("question.txt"):
             guessed.append("question.txt")
-
+        # Add other files next, avoiding duplicates
         for pattern in ("*.csv", "*.json", "*.parquet", "*.xlsx", "*.png", "*.jpg", "*.jpeg"):
-            guessed.extend(glob.glob(pattern))
-
+            for f in glob.glob(pattern):
+                if f not in guessed:
+                    guessed.append(f)
         if not guessed:
             print("[run.py] ERROR: No files found to upload")
             sys.exit(1)
-
         file_paths = guessed
         print(f"[run.py] Auto-attaching files: {file_paths}")
 
