@@ -11,17 +11,13 @@ def main():
     url = sys.argv[1]
     file_paths = sys.argv[2:]
 
-    # If no files were passed, auto-detect local files
     if not file_paths:
         guessed = []
-
-        # Questions file is mandatory in eval setup
         if os.path.exists("questions.txt"):
             guessed.append("questions.txt")
         elif os.path.exists("question.txt"):
             guessed.append("question.txt")
 
-        # Also include common dataset file types if present
         for pattern in ("*.csv", "*.json", "*.parquet", "*.xlsx", "*.png", "*.jpg", "*.jpeg"):
             guessed.extend(glob.glob(pattern))
 
@@ -32,27 +28,14 @@ def main():
         file_paths = guessed
         print(f"[run.py] Auto-attaching files: {file_paths}")
 
-    files = []
-    open_files = []
+    # Attach files all under the same "files" field
+    open_files = [open(path, "rb") for path in file_paths]
+    files = [("files", (os.path.basename(path), f)) for path, f in zip(file_paths, open_files)]
+
     try:
-        for path in file_paths:
-            if not os.path.exists(path):
-                print(f"[run.py] ⚠️ Skipping missing file: {path}")
-                continue
-
-            with open(path, "rb") as tf:
-                preview = tf.read(100)
-                size = os.path.getsize(path)
-                print(f"[run.py] Will upload {path}: {size} bytes, First 100 bytes: {preview}")
-
-            f = open(path, "rb")
-            open_files.append(f)
-            files.append(("files", (os.path.basename(path), f)))
-
         response = requests.post(url, files=files)
         response.raise_for_status()
         print(response.text)
-
     finally:
         for f in open_files:
             f.close()
