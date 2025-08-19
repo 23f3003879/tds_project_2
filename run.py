@@ -14,11 +14,15 @@ def main():
     # If no files were passed, auto-detect local files
     if not file_paths:
         guessed = []
+
+        # Questions file is mandatory in eval setup
         if os.path.exists("questions.txt"):
             guessed.append("questions.txt")
+        elif os.path.exists("question.txt"):
+            guessed.append("question.txt")
 
-        # also pick up other supported files if present
-        for pattern in ("*.csv", "*.json", "*.parquet", "*.xlsx", "*.png", "*.jpg"):
+        # Also include common dataset file types if present
+        for pattern in ("*.csv", "*.json", "*.parquet", "*.xlsx", "*.png", "*.jpg", "*.jpeg"):
             guessed.extend(glob.glob(pattern))
 
         if not guessed:
