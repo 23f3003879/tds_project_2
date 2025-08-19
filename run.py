@@ -1,4 +1,6 @@
 import sys
+import os
+import glob
 import requests
 
 def main():
@@ -9,18 +11,39 @@ def main():
     url = sys.argv[1]
     file_paths = sys.argv[2:]
 
+    # If no files were passed, auto-detect local files
+    if not file_paths:
+        guessed = []
+        if os.path.exists("questions.txt"):
+            guessed.append("questions.txt")
+
+        # also pick up other supported files if present
+        for pattern in ("*.csv", "*.json", "*.parquet", "*.xlsx", "*.png", "*.jpg"):
+            guessed.extend(glob.glob(pattern))
+
+        if not guessed:
+            print("[run.py] ERROR: No files found to upload")
+            sys.exit(1)
+
+        file_paths = guessed
+        print(f"[run.py] Auto-attaching files: {file_paths}")
+
     files = []
     open_files = []
     try:
-        # Pre-upload file diagnostics
         for path in file_paths:
-            # Check file exists and show its size and first few bytes
+            if not os.path.exists(path):
+                print(f"[run.py] ⚠️ Skipping missing file: {path}")
+                continue
+
             with open(path, "rb") as tf:
-                file_data = tf.read()
-                print(f"[run.py] Will upload {path}: {len(file_data)} bytes, First 100 bytes: {file_data[:100]}")
+                preview = tf.read(100)
+                size = os.path.getsize(path)
+                print(f"[run.py] Will upload {path}: {size} bytes, First 100 bytes: {preview}")
+
             f = open(path, "rb")
             open_files.append(f)
-            files.append(("files", f))
+            files.append(("files", (os.path.basename(path), f)))
 
         response = requests.post(url, files=files)
         response.raise_for_status()
